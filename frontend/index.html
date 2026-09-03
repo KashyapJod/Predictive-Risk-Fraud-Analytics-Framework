@@ -36,8 +36,12 @@
           </div>
           <form id="risk-form">
             <div class="field-grid">
-              <label>User ID<input id="user_id" name="user_id" value="u001" required></label>
-              <label>Country<input id="country" name="country" value="US" maxlength="2" required></label>
+              <label>User ID<select id="user_id" name="user_id" required>
+                <option value="u001">u001</option><option value="u002">u002</option><option value="u003">u003</option><option value="u004">u004</option><option value="u005">u005</option><option value="u006">u006</option><option value="u007">u007</option><option value="u008">u008</option><option value="u009">u009</option><option value="u010">u010</option><option value="u011">u011</option><option value="u012">u012</option><option value="u013">u013</option><option value="u014">u014</option><option value="u015">u015</option><option value="u016">u016</option><option value="u017">u017</option><option value="u018">u018</option><option value="u019">u019</option><option value="u020">u020</option>
+              </select></label>
+              <label>Country<select id="country" name="country" required>
+                <option value="US">US</option><option value="GB">GB</option><option value="CA">CA</option><option value="AU">AU</option><option value="DE">DE</option><option value="FR">FR</option><option value="SG">SG</option><option value="JP">JP</option><option value="BR">BR</option><option value="IN">IN</option><option value="NG">NG</option>
+              </select></label>
             </div>
             <div class="field-grid">
               <label>Amount <span class="unit">USD</span><input id="amount" name="amount" type="number" min="0.01" step="0.01" value="75" required></label>

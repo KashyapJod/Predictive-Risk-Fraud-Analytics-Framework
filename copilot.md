@@ -20,6 +20,7 @@
 - Expanded the database seed to 660 transactions across 20 users and 60 mixed fraud examples.
 - Fixed training feature/label ordering and added home-country joins; final seeded metrics are precision `0.929`, recall `0.722`, F1 `0.813`, and ROC-AUC `0.915`.
 - Added the Sentinel Risk Desk browser interface at `/`, including sample scenarios, risk visualization, decision guidance, and session history.
+- Replaced free-text user and country fields with dropdown selectors populated with all seeded users and supported country codes.
 
 ## Validation
 
