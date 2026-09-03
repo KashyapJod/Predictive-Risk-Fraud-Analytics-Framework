@@ -2,6 +2,7 @@
 
 ## 2026-09-03
 
+- Expanded `README.md` with the end-to-end architecture, data quality flow, feature definitions, model/artifact roles, API request example, and decision thresholds.
 - Built the standard `src`, `tests`, `data`, and `notebooks` project layout.
 - Added dependency management in `requirements.txt` and `pyproject.toml`.
 - Implemented deterministic SQLite users and transactions, including high-value, high-velocity anomalous rows.
