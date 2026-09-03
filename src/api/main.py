@@ -63,6 +63,10 @@ def predict(transaction: Transaction) -> Prediction:
     latest_features = current_features.iloc[0]
     if latest_features["amount_vs_average"] >= 2 and latest_features["country_mismatch"] == 1:
         risk_score = max(risk_score, 0.75)
+    elif latest_features["amount"] >= 500 or latest_features["amount_vs_average"] >= 5:
+        risk_score = max(risk_score, 0.75)
+    elif latest_features["amount_vs_average"] >= 2:
+        risk_score = max(risk_score, 0.5)
     elif latest_features["country_mismatch"] == 1:
         risk_score = max(risk_score, 0.5)
     elif latest_features["daily_txn_count"] >= 4:

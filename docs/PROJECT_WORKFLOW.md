@@ -204,6 +204,8 @@ Example response:
 7. Calculate the XGBoost fraud probability.
 8. Apply transparent high-signal guardrails:
    - Amount at least twice the historical average plus a country mismatch raises severity to `DENY`.
+  - An amount of at least `500` or at least five times the historical average raises severity to `DENY`, even in the home country.
+  - An amount at least twice the historical average raises severity to `FLAG`.
   - A country mismatch by itself raises severity to `FLAG`.
    - At least four transactions in the 24-hour window raises severity to at least `FLAG`.
 9. Map the final score to an action:
