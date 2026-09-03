@@ -53,6 +53,8 @@ def predict(transaction: Transaction) -> Prediction:
     users = pipeline.load_users()
     user_history = history.loc[history["user_id"] == transaction.user_id].copy()
     home_country = users.loc[users["user_id"] == transaction.user_id, "country"]
+    if home_country.empty:
+        raise HTTPException(status_code=404, detail=f"Unknown user_id: {transaction.user_id}")
     current = pd.DataFrame([transaction.model_dump()])
     current["home_country"] = home_country.iloc[0] if not home_country.empty else ""
     feature_rows = pd.concat([user_history, current], ignore_index=True)

@@ -22,12 +22,12 @@ def test_predict_returns_action_and_meets_latency(tmp_path, monkeypatch):
     train_models(database, str(artifact_dir))
     monkeypatch.setattr(api_main, "CLASSIFIER_PATH", artifact_dir / "fraud_classifier.joblib")
     monkeypatch.setattr(api_main, "DATABASE_URL", database)
-    payload = {"user_id": "u1", "amount": 20, "timestamp": "2026-01-01T10:00:00Z", "country": "US"}
+    payload = {"user_id": "u001", "amount": 75, "timestamp": "2030-01-01T10:00:00Z", "country": "GB"}
     started = time.perf_counter()
     response = TestClient(app).post("/predict", json=payload)
     elapsed = time.perf_counter() - started
     assert response.status_code == 200
-    assert response.json()["action"] in {"APPROVE", "FLAG", "DENY"}
+    assert response.json()["action"] == "APPROVE"
     assert 0 <= response.json()["risk_score"] <= 1
     assert elapsed < 0.2
 
@@ -60,3 +60,12 @@ def test_predict_flags_country_mismatch(tmp_path, monkeypatch):
     )
     assert response.status_code == 200
     assert response.json()["action"] == "FLAG"
+
+
+def test_predict_rejects_unknown_user():
+    response = TestClient(app).post(
+        "/predict",
+        json={"user_id": "u999", "amount": 75, "timestamp": "2030-01-01T10:00:00Z", "country": "GB"},
+    )
+    assert response.status_code == 404
+    assert "Unknown user_id" in response.json()["detail"]

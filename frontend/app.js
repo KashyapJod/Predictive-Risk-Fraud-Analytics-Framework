@@ -1,5 +1,5 @@
 const scenarios = {
-  normal: { user_id: 'u001', amount: 75, country: 'US' },
+  normal: { user_id: 'u001', amount: 75, country: 'GB' },
   suspicious: { user_id: 'u003', amount: 2500, country: 'NG' }
 };
 const form = document.querySelector('#risk-form');
