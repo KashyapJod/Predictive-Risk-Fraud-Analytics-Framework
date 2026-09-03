@@ -84,3 +84,11 @@ def test_predict_rejects_unknown_user():
     )
     assert response.status_code == 404
     assert "Unknown user_id" in response.json()["detail"]
+
+
+def test_predict_rejects_invalid_timestamp():
+    response = TestClient(app).post(
+        "/predict",
+        json={"user_id": "u001", "amount": 75, "timestamp": "not-a-timestamp", "country": "GB"},
+    )
+    assert response.status_code == 422

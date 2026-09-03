@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 
 import joblib
@@ -18,7 +19,7 @@ from src.pipelines.ingestion import DataPipeline
 class Transaction(BaseModel):
     user_id: str
     amount: float = Field(gt=0)
-    timestamp: str
+    timestamp: datetime
     country: str = Field(min_length=2, max_length=2)
 
 
