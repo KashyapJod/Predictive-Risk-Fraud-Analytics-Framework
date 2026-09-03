@@ -21,6 +21,7 @@
 - Fixed training feature/label ordering and added home-country joins; final seeded metrics are precision `0.929`, recall `0.722`, F1 `0.813`, and ROC-AUC `0.915`.
 - Decoupled the synthetic fraud archetypes across amount, velocity, location, and subtle cases. Current metrics are precision `0.923`, recall `0.667`, F1 `0.774`, and ROC-AUC `0.923`; amount importance is `0.105` while recency and velocity lead.
 - Audited API decision bands with multiple cases; corrected the routine sample to user `u001` home country `GB`, added unknown-user `404` handling, and added explicit approve/flag/deny regression coverage.
+- Improved dashboard readability by formatting user dropdown choices with home countries and country choices with full names; verified the live page and all `9` tests.
 - Added the Sentinel Risk Desk browser interface at `/`, including sample scenarios, risk visualization, decision guidance, and session history.
 - Replaced free-text user and country fields with dropdown selectors populated with all seeded users and supported country codes.
 - Added a country-mismatch `FLAG` path so moderate unexpected-location transactions have a reproducible middle-risk example.
