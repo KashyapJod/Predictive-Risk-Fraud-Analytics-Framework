@@ -45,11 +45,15 @@ def create_database(database_url: str = "sqlite:///data/transactions.db") -> Non
         country = user_countries[user_id]
         anomaly_time = start + timedelta(days=25, hours=fraud_index)
         for index in range(6):
-            subtle = fraud_index % 4 == 0
-            mismatch = not subtle and fraud_index % 3 != 0
-            amount = round(float(rng.uniform(260, 620)), 2) if not subtle else round(float(rng.uniform(40, 180)), 2)
-            transaction_time = anomaly_time + timedelta(minutes=index * 4)
-            if subtle:
+            pattern = fraud_index % 4
+            mismatch = pattern in (1, 3)
+            elevated_amount = pattern in (1, 3)
+            high_velocity = pattern in (2, 3)
+            amount = round(float(rng.uniform(260, 620)), 2) if elevated_amount else round(float(rng.uniform(40, 180)), 2)
+            transaction_time = anomaly_time + timedelta(hours=index * 12 + fraud_index)
+            if high_velocity:
+                transaction_time = anomaly_time + timedelta(minutes=index * 4)
+            if pattern == 0:
                 transaction_time = start + timedelta(days=10 + index * 3 + fraud_index)
             rows.append(
                 {

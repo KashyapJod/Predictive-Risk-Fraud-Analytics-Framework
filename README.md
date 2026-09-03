@@ -158,7 +158,9 @@ Generated files:
 | `artifacts/isolation_forest.joblib` | Unsupervised anomaly model |
 | `artifacts/metrics.json` | Evaluation metrics from the seeded holdout |
 
-The evaluation threshold is `0.9`, which produces a more realistic precision-recall tradeoff on the mixed synthetic cases. The current seeded holdout reports precision `0.929`, recall `0.722`, F1 `0.813`, and ROC-AUC `0.915`; these metrics are not production performance guarantees.
+The evaluation threshold is `0.9`, which produces a realistic precision-recall tradeoff on the mixed synthetic cases. The current seeded holdout reports precision `0.923`, recall `0.667`, F1 `0.774`, and ROC-AUC `0.923`; these metrics are not production performance guarantees.
+
+The current XGBoost feature importance profile is led by behavioral signals rather than raw amount: `time_since_last_txn` is about `0.476`, `daily_txn_count` about `0.327`, `amount` about `0.105`, and `amount_vs_average` about `0.092`. Country mismatch is retained as an explicit API guardrail because a binary location signal should not be allowed to disappear behind a tree split.
 
 ## 9. API Serving
 
