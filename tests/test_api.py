@@ -45,3 +45,18 @@ def test_predict_flags_suspicious_transaction(tmp_path, monkeypatch):
     )
     assert response.status_code == 200
     assert response.json()["action"] in {"FLAG", "DENY"}
+
+
+def test_predict_flags_country_mismatch(tmp_path, monkeypatch):
+    database = f"sqlite:///{tmp_path / 'api.db'}"
+    artifact_dir = tmp_path / "artifacts"
+    create_database(database)
+    train_models(database, str(artifact_dir))
+    monkeypatch.setattr(api_main, "CLASSIFIER_PATH", artifact_dir / "fraud_classifier.joblib")
+    monkeypatch.setattr(api_main, "DATABASE_URL", database)
+    response = TestClient(app).post(
+        "/predict",
+        json={"user_id": "u001", "amount": 120, "timestamp": "2030-01-01T10:00:00Z", "country": "NG"},
+    )
+    assert response.status_code == 200
+    assert response.json()["action"] == "FLAG"

@@ -22,6 +22,7 @@
 - Decoupled the synthetic fraud archetypes across amount, velocity, location, and subtle cases. Current metrics are precision `0.923`, recall `0.667`, F1 `0.774`, and ROC-AUC `0.923`; amount importance is `0.105` while recency and velocity lead.
 - Added the Sentinel Risk Desk browser interface at `/`, including sample scenarios, risk visualization, decision guidance, and session history.
 - Replaced free-text user and country fields with dropdown selectors populated with all seeded users and supported country codes.
+- Added a country-mismatch `FLAG` path so moderate unexpected-location transactions have a reproducible middle-risk example.
 
 ## Validation
 
