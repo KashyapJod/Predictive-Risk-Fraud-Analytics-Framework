@@ -75,7 +75,9 @@ The action thresholds are:
 - `FLAG`: score from `0.35` up to, but not including, `0.75`
 - `DENY`: score `0.75` or higher
 
-The API requires `artifacts/fraud_classifier.joblib`; run the training command before starting the server. The API currently accepts the public transaction fields only, so `country_mismatch` remains `0` unless the feature pipeline is supplied with a separate `home_country` field.
+In addition to the learned probability, the endpoint applies two transparent guardrails: a transaction at least twice the user's historical average and from a different country is raised to `DENY` severity, while at least four transactions in the 24-hour window is raised to `FLAG` severity. These rules make the demo's high-signal fraud patterns explainable and reduce the chance that a small training set masks an obvious anomaly.
+
+The API requires `artifacts/fraud_classifier.joblib`; run the training command before starting the server. It looks up the user's existing transaction history and home country before scoring, so recency, velocity, amount ratio, and country mismatch are calculated against known context.
 
 ## Quick start
 

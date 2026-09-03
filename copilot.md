@@ -2,6 +2,10 @@
 
 ## 2026-09-03
 
+- Verified the project: clean git state, required artifacts present, diagnostics clear, and the test suite initially passed with `5 passed, 2 warnings`.
+- Found and fixed an API behavior gap where single-row scoring hid user history and a suspicious transaction could be approved.
+- The API now loads transaction history and home country, computes contextual features, and applies explainable guardrails for amount/country mismatch and high velocity.
+- Added a suspicious-transaction regression test. Final validation: `6 passed, 2 warnings`; live smoke test on port `8001` returned `risk_score: 0.75` and `action: DENY`.
 - Expanded `README.md` with the end-to-end architecture, data quality flow, feature definitions, model/artifact roles, API request example, and decision thresholds.
 - Built the standard `src`, `tests`, `data`, and `notebooks` project layout.
 - Added dependency management in `requirements.txt` and `pyproject.toml`.
