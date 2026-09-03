@@ -11,7 +11,8 @@ from src.pipelines.db_setup import create_database
 def test_root_reports_service_status():
     response = TestClient(app).get("/")
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    assert "Sentinel Risk Desk" in response.text
+    assert TestClient(app).get("/health").json()["status"] == "ok"
 
 
 def test_predict_returns_action_and_meets_latency(tmp_path, monkeypatch):

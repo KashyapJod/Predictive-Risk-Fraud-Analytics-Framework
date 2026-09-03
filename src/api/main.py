@@ -7,6 +7,8 @@ from pathlib import Path
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from src.features.engineering import model_features
@@ -28,16 +30,18 @@ class Prediction(BaseModel):
 app = FastAPI(title="Predictive Risk and Fraud Analytics API", version="0.1.0")
 CLASSIFIER_PATH = Path("artifacts/fraud_classifier.joblib")
 DATABASE_URL = "sqlite:///data/transactions.db"
+FRONTEND_PATH = Path("frontend/index.html")
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
 
 
 @app.get("/")
-def root() -> dict[str, str]:
-    return {
-        "service": "Predictive Risk and Fraud Analytics API",
-        "status": "ok",
-        "docs": "/docs",
-        "predict": "/predict",
-    }
+def root() -> FileResponse:
+    return FileResponse(FRONTEND_PATH)
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"service": "Predictive Risk and Fraud Analytics API", "status": "ok", "docs": "/docs", "predict": "/predict"}
 
 
 @app.post("/predict", response_model=Prediction)

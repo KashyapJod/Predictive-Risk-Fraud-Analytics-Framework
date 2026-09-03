@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Transaction risk operations dashboard">
+  <title>Sentinel Risk Desk</title>
+  <link rel="stylesheet" href="/frontend/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Sentinel Risk Desk home">
+        <span class="brand-mark">S</span>
+        <span><strong>Sentinel</strong><small>Risk desk</small></span>
+      </a>
+      <div class="topbar-meta"><span class="live-dot"></span><span>Scoring engine online</span><a href="/docs">API docs</a></div>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">Transaction intelligence</p>
+          <h1>Make the next decision<br><em>with context.</em></h1>
+          <p class="intro-copy">Score a transaction against the user's observed history, velocity, amount behavior, and location signal.</p>
+        </div>
+        <div class="intro-stat"><span>Model posture</span><strong>Precision-led</strong><small>Human review stays in the loop</small></div>
+      </section>
+
+      <section class="workspace-grid">
+        <div class="panel form-panel">
+          <div class="panel-heading"><div><p class="eyebrow">New assessment</p><h2>Transaction details</h2></div><span class="step-badge">01 / 01</span></div>
+          <div class="scenario-row" aria-label="Load a sample transaction">
+            <button class="scenario active" data-scenario="normal"><span class="scenario-icon">&#10003;</span><span><strong>Routine</strong><small>Likely approve</small></span></button>
+            <button class="scenario" data-scenario="suspicious"><span class="scenario-icon">!</span><span><strong>High risk</strong><small>Likely deny</small></span></button>
+          </div>
+          <form id="risk-form">
+            <div class="field-grid">
+              <label>User ID<input id="user_id" name="user_id" value="u001" required></label>
+              <label>Country<input id="country" name="country" value="US" maxlength="2" required></label>
+            </div>
+            <div class="field-grid">
+              <label>Amount <span class="unit">USD</span><input id="amount" name="amount" type="number" min="0.01" step="0.01" value="75" required></label>
+              <label>Timestamp<input id="timestamp" name="timestamp" type="datetime-local" required></label>
+            </div>
+            <button class="primary-button" type="submit"><span>Run risk assessment</span><span class="arrow">&#8594;</span></button>
+            <p class="form-note">The assessment uses the user's stored transaction history before scoring.</p>
+          </form>
+        </div>
+
+        <div class="panel result-panel" id="result-panel" aria-live="polite">
+          <div class="panel-heading"><div><p class="eyebrow">Assessment result</p><h2 id="result-title">Ready to score</h2></div><span class="result-icon" id="result-icon">&#8599;</span></div>
+          <div class="empty-result" id="empty-result"><div class="pulse-ring">S</div><p>Enter a transaction to see the risk signal.</p><small>Decisioning typically completes in under 200ms</small></div>
+          <div class="result-content hidden" id="result-content">
+            <div class="decision-row"><div><span class="decision-label">Recommended action</span><strong id="decision">APPROVE</strong></div><div class="score-wrap"><span>Risk score</span><strong id="score">0.00</strong></div></div>
+            <div class="meter"><span id="meter-fill"></span></div>
+            <div class="thresholds"><span><i class="approve-dot"></i>Approve &lt; 0.35</span><span><i class="flag-dot"></i>Flag 0.35 - 0.74</span><span><i class="deny-dot"></i>Deny &ge; 0.75</span></div>
+            <div class="signal-card"><span class="signal-symbol" id="signal-symbol">+</span><div><strong id="signal-title">Low-risk profile</strong><p id="signal-copy">This transaction is consistent with the available user context.</p></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lower-grid">
+        <div class="panel history-panel"><div class="panel-heading"><div><p class="eyebrow">Session trail</p><h2>Recent decisions</h2></div><span class="count" id="history-count">0</span></div><div id="history-list" class="history-list"><p class="muted">No assessments in this session yet.</p></div></div>
+        <div class="panel guide-panel"><p class="eyebrow">Signal guide</p><h2>What shapes a decision?</h2><div class="guide-list"><div><span class="guide-number">01</span><p><strong>Amount behavior</strong><small>Current amount compared with the user's historical average.</small></p></div><div><span class="guide-number">02</span><p><strong>Velocity</strong><small>How quickly transactions are arriving in a 24-hour window.</small></p></div><div><span class="guide-number">03</span><p><strong>Location</strong><small>Country mismatch can elevate an otherwise borderline signal.</small></p></div></div></div>
+      </section>
+    </main>
+    <footer><span>Sentinel Risk Desk</span><span>Local model workspace</span></footer>
+  </div>
+  <script src="/frontend/app.js"></script>
+</body>
+</html>

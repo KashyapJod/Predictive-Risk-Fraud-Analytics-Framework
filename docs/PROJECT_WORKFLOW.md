@@ -168,9 +168,12 @@ Start the application after database creation and model training:
 ./.venv/bin/uvicorn src.api.main:app --host 127.0.0.1 --port 8000
 ```
 
+Open `http://127.0.0.1:8000/` for the Sentinel Risk Desk web interface. The page is a browser client for `/predict` and includes sample scenarios, transaction inputs, a risk meter, decision guidance, and an in-session history list.
+
 Endpoints:
 
-- `GET /`: service health response and links to the API documentation.
+- `GET /`: Sentinel Risk Desk web interface.
+- `GET /health`: service health response.
 - `GET /docs`: interactive Swagger UI.
 - `POST /predict`: transaction risk scoring.
 
