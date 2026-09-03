@@ -8,6 +8,12 @@ from src.models.train import train_models
 from src.pipelines.db_setup import create_database
 
 
+def test_root_reports_service_status():
+    response = TestClient(app).get("/")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
 def test_predict_returns_action_and_meets_latency(tmp_path, monkeypatch):
     database = f"sqlite:///{tmp_path / 'api.db'}"
     artifact_dir = tmp_path / "artifacts"

@@ -30,6 +30,16 @@ CLASSIFIER_PATH = Path("artifacts/fraud_classifier.joblib")
 DATABASE_URL = "sqlite:///data/transactions.db"
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {
+        "service": "Predictive Risk and Fraud Analytics API",
+        "status": "ok",
+        "docs": "/docs",
+        "predict": "/predict",
+    }
+
+
 @app.post("/predict", response_model=Prediction)
 def predict(transaction: Transaction) -> Prediction:
     if not CLASSIFIER_PATH.exists():
