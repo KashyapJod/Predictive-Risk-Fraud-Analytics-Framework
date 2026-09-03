@@ -1,108 +1,278 @@
-# Predictive Risk and Fraud Analytics Framework
+# Project Workflow
 
-A small, reproducible Python framework for transaction ingestion, behavioral feature engineering, fraud model training, and real-time risk scoring.
+## 1. Purpose
 
-## How it works
+The Predictive Risk and Fraud Analytics Framework is a small end-to-end transaction risk system. It demonstrates how transaction data can be loaded, validated, transformed into behavioral signals, scored by machine-learning models, and exposed through an HTTP API.
 
-The project follows one simple transaction-scoring flow:
+The repository is designed as a reproducible local demonstration. The included dataset is deterministic and contains 20 users, 660 transactions, and 60 fraud labels. Its metrics validate the pipeline rather than represent production performance.
 
-```text
-SQLite database
-		-> DataPipeline validates and loads transactions
-		-> feature engineering creates behavioral signals
-		-> XGBoost estimates fraud probability
-		-> API maps probability to APPROVE, FLAG, or DENY
+## 2. End-to-End Flow
+
+```mermaid
+flowchart LR
+    A[Install dependencies] --> B[Create SQLite database]
+    B --> C[Load and validate data]
+    C --> D[Engineer behavioral features]
+    D --> E[Train XGBoost classifier]
+    D --> F[Train Isolation Forest]
+    E --> G[Save fraud_classifier.joblib]
+    F --> H[Save isolation_forest.joblib]
+    E --> I[Save metrics.json]
+    G --> J[Start FastAPI]
+    J --> K[POST /predict]
+    K --> L[Load user history]
+    L --> M[Calculate current features]
+    M --> N[Calculate fraud probability]
+    N --> O[Apply risk guardrails]
+    O --> P[APPROVE, FLAG, or DENY]
 ```
 
-### 1. Create the data
+The workflow has two related paths:
 
-`src/pipelines/db_setup.py` creates two SQLite tables:
+1. **Training path:** create data, validate it, engineer features, train models, and save artifacts.
+2. **Serving path:** receive an API request, enrich it with database history, calculate the same features, and return a risk decision.
 
-- `users`: user country and account age.
-- `transactions`: amount, timestamp, transaction country, and the `is_fraud` training label.
+The feature column order must remain the same in both paths:
 
-The seed data is deterministic. It contains ordinary transactions plus a small fraud pattern: unusually large, high-velocity transactions from a different country.
+```text
+amount
+ time_since_last_txn
+ daily_txn_count
+ amount_vs_average
+ country_mismatch
+```
 
-### 2. Validate and load it
+## 3. Repository Components
 
-`DataPipeline` reads the tables with pandas and converts timestamps and amounts to their expected types. Rows with missing amounts, invalid timestamps, or negative amounts receive a `quality_flag` and are removed from the clean training set.
+```text
+src/
+├── api/main.py                 FastAPI application and /predict endpoint
+├── features/engineering.py     Behavioral feature calculations
+├── models/train.py             Model training and metric generation
+└── pipelines/
+    ├── db_setup.py             SQLite schema and deterministic seed data
+    └── ingestion.py            Database loading and quality checks
 
-### 3. Build behavioral features
+tests/
+├── test_environment.py         Dependency import check
+├── test_pipelines.py           Database and data-quality tests
+├── test_features.py            Feature behavior tests
+├── test_models.py              Artifact and metric tests
+└── test_api.py                 API and risk-decision tests
 
-For each user, `src/features/engineering.py` calculates:
+data/                           Local database location
+artifacts/                      Generated model files and metrics
+README.md                       Quick-start documentation
+copilot.md                      Implementation and validation work log
+docs/PROJECT_WORKFLOW.md        This complete workflow reference
+```
 
-- `time_since_last_txn`: hours since the user's previous transaction.
-- `daily_txn_count`: number of transactions in the surrounding 24-hour window.
-- `amount_vs_average`: current amount divided by the user's previous average amount.
-- `country_mismatch`: `1` when transaction and home countries differ, otherwise `0`.
+## 4. Environment Setup
 
-The model uses five numeric columns: `amount`, the three behavioral features above, and `country_mismatch`. Missing or infinite feature values are replaced with `0`.
+The project uses a Python virtual environment. From the repository root:
 
-### 4. Train the models
+```bash
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r requirements.txt
+```
 
-`src/models/train.py` trains two pipelines:
+Use the explicit `.venv/bin` paths when the shell activation command is unavailable or fails. The project does not require a globally installed Python package.
 
-- **XGBoost classifier**: supervised model trained with the `is_fraud` label. Its fraud probability is used by the API.
-- **Isolation Forest**: unsupervised anomaly model trained alongside the classifier for future anomaly-analysis workflows.
+## 5. Database Creation
 
-Training writes these files to `artifacts/`:
+Run:
 
-- `fraud_classifier.joblib`
-- `isolation_forest.joblib`
-- `metrics.json` containing precision, recall, F1, and ROC-AUC.
+```bash
+./.venv/bin/python -m src.pipelines.db_setup
+```
 
-The example dataset is intentionally small, and the training threshold favors recall to reduce missed fraud. Its metrics should be treated as a pipeline smoke test, not as production model performance.
+This creates `data/transactions.db` and replaces the two local tables on each run:
 
-### 5. Score a transaction through the API
+### `users`
 
-The `/predict` endpoint accepts a transaction, creates the same feature columns used during training, and returns a fraud probability between `0` and `1`:
+| Column | Meaning |
+| --- | --- |
+| `user_id` | Stable user identifier |
+| `country` | User's home country |
+| `account_age_days` | Age of the account in days |
+
+### `transactions`
+
+| Column | Meaning |
+| --- | --- |
+| `transaction_id` | Stable transaction identifier |
+| `user_id` | User who made the transaction |
+| `amount` | Transaction amount |
+| `timestamp` | ISO-formatted transaction time |
+| `country` | Country associated with the transaction |
+| `is_fraud` | Training label: `0` normal, `1` fraud |
+
+The seed generator creates 600 normal transactions across 20 users and injects 60 fraud transactions across 10 users. Fraud cases mix obvious high-value, high-velocity country mismatches with subtler cases that resemble normal activity.
+
+## 6. Ingestion and Data Quality
+
+`DataPipeline` in `src/pipelines/ingestion.py` reads the tables with pandas and normalizes the input:
+
+1. Read the `transactions` table from SQLite.
+2. Parse `timestamp` values as UTC datetimes.
+3. Convert `amount` values to numeric values.
+4. Set `quality_flag` for missing amounts, invalid timestamps, or negative amounts.
+5. Remove flagged rows when loading the clean training data.
+
+The pipeline also exposes `load_users()` for API context enrichment.
+
+## 7. Feature Engineering
+
+`add_transaction_features()` sorts each user's transactions by timestamp and adds four behavioral signals:
+
+- **`time_since_last_txn`**: elapsed hours since the previous transaction for the same user. The first known transaction uses `999.0` as a sentinel.
+- **`daily_txn_count`**: number of that user's transactions in the surrounding 24-hour time window.
+- **`amount_vs_average`**: current amount divided by the user's previous expanding average. The first transaction and zero-average cases use `1.0`.
+- **`country_mismatch`**: `1` when the transaction country differs from `home_country`; otherwise `0`.
+
+`model_features()` keeps the five numeric model columns, replaces infinite values, and fills missing values with zero.
+
+## 8. Model Training
+
+Run:
+
+```bash
+./.venv/bin/python -m src.models.train
+```
+
+Training performs these steps:
+
+1. Load clean transactions from `data/transactions.db`.
+2. Build the numeric feature matrix.
+3. Fit an **Isolation Forest** for unsupervised anomaly detection.
+4. Split labeled data into a stratified training and evaluation set.
+5. Fit an **XGBoost classifier** for supervised fraud probability.
+6. Evaluate precision, recall, F1, and ROC-AUC.
+7. Save reusable artifacts in `artifacts/`.
+
+Generated files:
+
+| File | Purpose |
+| --- | --- |
+| `artifacts/fraud_classifier.joblib` | Classifier used by the API |
+| `artifacts/isolation_forest.joblib` | Unsupervised anomaly model |
+| `artifacts/metrics.json` | Evaluation metrics from the seeded holdout |
+
+The evaluation threshold is `0.9`, which produces a more realistic precision-recall tradeoff on the mixed synthetic cases. The current seeded holdout reports precision `0.929`, recall `0.722`, F1 `0.813`, and ROC-AUC `0.915`; these metrics are not production performance guarantees.
+
+## 9. API Serving
+
+Start the application after database creation and model training:
+
+```bash
+./.venv/bin/uvicorn src.api.main:app --host 127.0.0.1 --port 8000
+```
+
+Endpoints:
+
+- `GET /`: service health response and links to the API documentation.
+- `GET /docs`: interactive Swagger UI.
+- `POST /predict`: transaction risk scoring.
+
+Example request:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/predict \
-	-H 'Content-Type: application/json' \
-	-d '{"user_id":"u003","amount":2500,"timestamp":"2026-01-01T10:00:00Z","country":"NG"}'
+  -H 'Content-Type: application/json' \
+  -d '{"user_id":"u003","amount":2500,"timestamp":"2030-01-01T10:00:00Z","country":"NG"}'
 ```
 
 Example response:
 
 ```json
-{"risk_score":0.91,"action":"DENY"}
+{"risk_score":0.75,"action":"DENY"}
 ```
 
-The action thresholds are:
+### `/predict` processing sequence
 
-- `APPROVE`: score below `0.35`
-- `FLAG`: score from `0.35` up to, but not including, `0.75`
-- `DENY`: score `0.75` or higher
+1. Validate the request with Pydantic.
+2. Confirm that `artifacts/fraud_classifier.joblib` exists.
+3. Load the user's existing transactions from SQLite.
+4. Look up the user's home country.
+5. Append the incoming transaction to that user's history.
+6. Generate the current transaction's five model features.
+7. Calculate the XGBoost fraud probability.
+8. Apply transparent high-signal guardrails:
+   - Amount at least twice the historical average plus a country mismatch raises severity to `DENY`.
+   - At least four transactions in the 24-hour window raises severity to at least `FLAG`.
+9. Map the final score to an action:
+   - Below `0.35`: `APPROVE`
+   - `0.35` to below `0.75`: `FLAG`
+   - `0.75` or higher: `DENY`
 
-In addition to the learned probability, the endpoint applies two transparent guardrails: a transaction at least twice the user's historical average and from a different country is raised to `DENY` severity, while at least four transactions in the 24-hour window is raised to `FLAG` severity. These rules make the demo's high-signal fraud patterns explainable and reduce the chance that a small training set masks an obvious anomaly.
+If the database or artifacts are missing, the service must be initialized with the setup and training commands before `/predict` can work.
 
-The API requires `artifacts/fraud_classifier.joblib`; run the training command before starting the server. It looks up the user's existing transaction history and home country before scoring, so recency, velocity, amount ratio, and country mismatch are calculated against known context.
+## 10. Testing and Validation
 
-## Quick start
+Run all tests with:
 
 ```bash
-python -m venv .venv
-.venv/bin/pip install -r requirements.txt
-.venv/bin/python -m src.pipelines.db_setup
-.venv/bin/python -m src.models.train
-.venv/bin/uvicorn src.api.main:app --reload
+./.venv/bin/pytest tests/ -q
 ```
 
-The API is available at `http://127.0.0.1:8000`. Open `/docs` for the interactive OpenAPI client.
+The test suite verifies:
 
-## Test
+- Required libraries import successfully.
+- SQLite tables are created.
+- Invalid critical transaction rows are flagged and excluded.
+- Velocity and ratio features handle normal and zero-average inputs.
+- Model artifacts and bounded metrics are generated.
+- The root health route works.
+- Normal API requests return a valid action and meet the latency check.
+- Suspicious transactions are escalated to `FLAG` or `DENY`.
+
+A clean repository check is:
 
 ```bash
-.venv/bin/pytest -q
+git diff --check
+git status --short --branch
 ```
 
-## Layout
+## 11. Common Issues
 
-- `src/pipelines`: SQLite schema, deterministic mock data, and quality-aware loading.
-- `src/features`: velocity, recency, and user-relative amount features.
-- `src/models`: model training and JSON/joblib artifacts.
-- `src/api`: FastAPI `/predict` endpoint returning `APPROVE`, `FLAG`, or `DENY`.
-- `tests`: focused unit and integration checks.
+### The browser shows `{"detail":"Not Found"}`
 
-The classifier uses a weighted XGBoost model and Isolation Forest is trained alongside it for supervised and unsupervised detection. The public model input deliberately stays small and numeric so the artifacts remain portable.
+The server is probably running older code, or the application was started before the `GET /` route was added. Stop the existing Uvicorn process and restart it from the repository root:
+
+```bash
+./.venv/bin/uvicorn src.api.main:app --host 127.0.0.1 --port 8000
+```
+
+### Port 8000 is already in use
+
+Use the existing service if it is the current application, or start a second instance on another port:
+
+```bash
+./.venv/bin/uvicorn src.api.main:app --host 127.0.0.1 --port 8001
+```
+
+Then use `http://127.0.0.1:8001/docs` and update the curl URL accordingly.
+
+### The shell cannot activate `.venv`
+
+Activation is optional. Use direct executable paths such as `./.venv/bin/python`, `./.venv/bin/pytest`, and `./.venv/bin/uvicorn`.
+
+### `/predict` returns HTTP 503
+
+The classifier artifact is missing. Run database setup and model training again:
+
+```bash
+./.venv/bin/python -m src.pipelines.db_setup
+./.venv/bin/python -m src.models.train
+```
+
+## 12. Recommended Production Extensions
+
+This repository is a local framework demonstration. A production implementation would typically add:
+
+- A managed database and streaming ingestion layer.
+- Authentication, authorization, request tracing, and rate limiting.
+- Feature storage for low-latency user history lookups.
+- Time-based validation and larger representative training data.
+- Model versioning, drift monitoring, explainability, and human review queues.
+- Structured logging and alerts for model and API failures.

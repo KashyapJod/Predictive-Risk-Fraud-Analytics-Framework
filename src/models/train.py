@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 import joblib
-from sklearn.ensemble import IsolationForest, RandomForestClassifier
+from sklearn.ensemble import IsolationForest
 from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
@@ -21,11 +21,15 @@ from src.pipelines.ingestion import DataPipeline
 def train_models(database_url: str = "sqlite:///data/transactions.db", artifact_dir: str = "artifacts") -> dict[str, float]:
     output = Path(artifact_dir)
     output.mkdir(parents=True, exist_ok=True)
-    data = DataPipeline(database_url).load_transactions()
+    pipeline = DataPipeline(database_url)
+    data = pipeline.load_transactions()
+    users = pipeline.load_users().rename(columns={"country": "home_country"})
+    data = data.merge(users[["user_id", "home_country"]], on="user_id", how="left")
     if len(data) < 4 or data["is_fraud"].nunique() < 2:
         raise ValueError("Training requires at least two classes and four valid transactions")
-    x = model_features(data)
-    y = data["is_fraud"].astype(int)
+    ordered_data = data.sort_values(["user_id", "timestamp"]).reset_index(drop=True)
+    x = model_features(ordered_data)
+    y = ordered_data["is_fraud"].astype(int)
     anomaly_model = Pipeline([("scale", StandardScaler()), ("model", IsolationForest(n_estimators=100, random_state=7, contamination="auto"))])
     anomaly_model.fit(x)
     classifier = Pipeline(
@@ -41,13 +45,14 @@ def train_models(database_url: str = "sqlite:///data/transactions.db", artifact_
                 eval_metric="logloss",
                 random_state=7,
                 n_jobs=1,
+                scale_pos_weight=float((y == 0).sum() / (y == 1).sum()),
             )),
         ]
     )
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, stratify=y, random_state=7)
     classifier.fit(x_train, y_train)
     probabilities = classifier.predict_proba(x_test)[:, 1]
-    predictions = (probabilities >= 0.01).astype(int)
+    predictions = (probabilities >= 0.9).astype(int)
     metrics = {
         "precision": float(precision_score(y_test, predictions, zero_division=0)),
         "recall": float(recall_score(y_test, predictions, zero_division=0)),

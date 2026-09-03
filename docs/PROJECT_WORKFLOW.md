@@ -4,7 +4,7 @@
 
 The Predictive Risk and Fraud Analytics Framework is a small end-to-end transaction risk system. It demonstrates how transaction data can be loaded, validated, transformed into behavioral signals, scored by machine-learning models, and exposed through an HTTP API.
 
-The repository is designed as a reproducible local demonstration. The included dataset is deterministic and intentionally small, so its metrics validate the pipeline rather than represent production performance.
+The repository is designed as a reproducible local demonstration. The included dataset is deterministic and contains 20 users, 660 transactions, and 60 fraud labels. Its metrics validate the pipeline rather than represent production performance.
 
 ## 2. End-to-End Flow
 
@@ -107,7 +107,7 @@ This creates `data/transactions.db` and replaces the two local tables on each ru
 | `country` | Country associated with the transaction |
 | `is_fraud` | Training label: `0` normal, `1` fraud |
 
-The seed generator creates ordinary transactions for four users and injects five transactions for user `u003` with large amounts, very short intervals, and country `NG` instead of the user's home country `CA`.
+The seed generator creates 600 normal transactions across 20 users and injects 60 fraud transactions across 10 users. Fraud cases mix obvious high-value, high-velocity country mismatches with subtler cases that resemble normal activity.
 
 ## 6. Ingestion and Data Quality
 
@@ -158,7 +158,7 @@ Generated files:
 | `artifacts/isolation_forest.joblib` | Unsupervised anomaly model |
 | `artifacts/metrics.json` | Evaluation metrics from the seeded holdout |
 
-The training decision threshold is intentionally recall-first because missing fraud is more costly than producing extra review candidates in this demonstration. The metrics should not be used as a production benchmark because the seed dataset is very small.
+The evaluation threshold is `0.9`, which produces a more realistic precision-recall tradeoff on the mixed synthetic cases. The current seeded holdout reports precision `0.929`, recall `0.722`, F1 `0.813`, and ROC-AUC `0.915`; these metrics are not production performance guarantees.
 
 ## 9. API Serving
 

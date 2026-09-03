@@ -17,12 +17,14 @@
 - Implemented FastAPI `/predict` scoring with `APPROVE`, `FLAG`, and `DENY` actions.
 - Added focused tests for imports, database and quality handling, features, model artifacts, and API availability.
 - Added `docs/PROJECT_WORKFLOW.md` with the complete project workflow, data schemas, feature calculations, model lifecycle, API sequence, tests, troubleshooting, and production extension guidance.
+- Expanded the database seed to 660 transactions across 20 users and 60 mixed fraud examples.
+- Fixed training feature/label ordering and added home-country joins; final seeded metrics are precision `0.929`, recall `0.722`, F1 `0.813`, and ROC-AUC `0.915`.
 
 ## Validation
 
 - Initial validation command: `.venv/bin/pytest tests/test_environment.py -q`.
 - Full validation command: `.venv/bin/pytest tests/ -q`.
-- Final result: `5 passed, 2 warnings`.
+- Final result before this update: `7 passed, 2 warnings`.
 - CLI smoke test generated `data/transactions.db`, model joblib artifacts, and `artifacts/metrics.json`.
-- Seeded holdout metrics: precision `0.125`, recall `1.0`, F1 `0.2222222222222222`, ROC-AUC `0.7142857142857143`.
+- Previous seeded holdout metrics are retained above as historical context; the current seeded holdout is precision `0.9285714285714286`, recall `0.7222222222222222`, F1 `0.8125`, ROC-AUC `0.9152777777777777`.
 - The warnings are dependency deprecations from the installed FastAPI/Starlette test client stack; no test failed.
