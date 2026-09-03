@@ -16,6 +16,7 @@
 - Implemented Isolation Forest and XGBoost training with joblib artifacts and precision/recall/F1/ROC-AUC metrics.
 - Implemented FastAPI `/predict` scoring with `APPROVE`, `FLAG`, and `DENY` actions.
 - Added focused tests for imports, database and quality handling, features, model artifacts, and API availability.
+- Added `docs/PROJECT_WORKFLOW.md` with the complete project workflow, data schemas, feature calculations, model lifecycle, API sequence, tests, troubleshooting, and production extension guidance.
 
 ## Validation
 
